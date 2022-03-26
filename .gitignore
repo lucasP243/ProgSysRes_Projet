@@ -1,0 +1,2 @@
+# ignore cmake builds
+*/cmake-build-debug/*
