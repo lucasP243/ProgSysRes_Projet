@@ -1,2 +1,5 @@
 # ignore cmake builds
-*/cmake-build-debug/*
+*/cmake-build-debug
+
+# ignore IDEA project files
+*/.idea
