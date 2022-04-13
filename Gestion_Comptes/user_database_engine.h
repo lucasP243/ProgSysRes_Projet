@@ -1,5 +1,5 @@
-#ifndef __USER_DATABASE_ENGINE_H__
-#define __USER_DATABASE_ENGINE_H__
+#ifndef USER_DATABASE_ENGINE_H
+#define USER_DATABASE_ENGINE_H
 
 #include <stdint.h>
 
@@ -28,19 +28,19 @@
 #define USER_DATABASE_OPERATION_OK 0
 
 /** Operation failed : invalid username or password */
-#define USER_DATABASE_INVALID_CREDENTIALS -1
+#define USER_DATABASE_INVALID_CREDENTIALS (-1)
 
 /** Operation failed : user already exists */
-#define USER_DATABASE_ALREADY_EXISTS -2
+#define USER_DATABASE_ALREADY_EXISTS (-2)
 
 /** Operation failed : user does not exist */
-#define USER_DATABASE_NOT_EXISTS -3
+#define USER_DATABASE_NOT_EXISTS (-3)
 
 /** Operation failed : user already connected */
-#define USER_DATABASE_ALREADY_CONNECTED -4
+#define USER_DATABASE_ALREADY_CONNECTED (-4)
 
 /** Operation failed : user not connected */
-#define USER_DATABASE_NOT_CONNECTED -5
+#define USER_DATABASE_NOT_CONNECTED (-5)
 
 /**
  * Initializes the database and loads the persistent data.
