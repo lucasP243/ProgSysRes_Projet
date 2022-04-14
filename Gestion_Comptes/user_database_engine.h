@@ -42,15 +42,60 @@
 /** Operation failed : user not connected */
 #define USER_DATABASE_NOT_CONNECTED (-5)
 
+/** Operation failed : database is full */
+#define USER_DATABASE_TOO_MANY_USERS (-5)
+
+/** Server error : failed to initialize database */
+#define USER_DATABASE_INIT_FAILED (-11)
+
+/** Server error : failed to close database */
+#define USER_DATABASE_CLOSE_FAILED (-12)
+
+/** Server error : failed to insert user */
+#define USER_DATABASE_INSERT_FAILED (-13)
+
 /**
  * Initializes the database and loads the persistent data.
  */
-extern void user_database_init();
+extern int8_t user_database_init();
 
 /**
  * Closes the database and saves to the persistent data.
  */
-extern void user_database_close();
+extern int8_t user_database_close();
+
+/**
+ * Attempts to create a new user.
+ *
+ * @param username name of the user
+ * @param hash produced by the user's password
+ * @param id the id of the newly created user
+ *
+ * @return USER_DATABASE_OPERATION_OK
+ *         <hr>
+ *         USER_DATABASE_ALREADY_EXISTS
+ */
+extern int8_t user_database_create(
+        const char *username,
+        uint64_t hash,
+        size_t *id
+);
+
+/**
+ * Attempts to delete an user.
+ *
+ * @param id id of the user
+ * @param hash produced by the user's password
+ *
+ * @return USER_DATABASE_OPERATION_OK
+ *         <hr>
+ *         USER_DATABASE_INVALID_CREDENTIALS<br>
+ *         USER_DATABASE_NOT_EXISTS
+ */
+extern int8_t user_database_delete(
+        size_t id,
+        uint64_t hash
+);
 
 /**
  * Attempts to log in an user.
@@ -63,9 +108,9 @@ extern void user_database_close();
  *         USER_DATABASE_INVALID_CREDENTIALS<br>
  *         USER_DATABASE_ALREADY_CONNECTED
  */
-extern uint8_t user_database_login(
-        char *username,
-        uint32_t hash
+extern int8_t user_database_login(
+        size_t id,
+        uint64_t hash
 );
 
 /**
@@ -79,45 +124,15 @@ extern uint8_t user_database_login(
  *         USER_DATABASE_INVALID_CREDENTIALS<br>
  *         USER_DATABASE_NOT_CONNECTED
  */
-extern uint8_t user_database_logout(
-        char *username
+extern int8_t user_database_logout(
+        size_t id,
+        uint64_t hash
 );
 
 /**
- * Attempts to create a new user.
+ * Attempts to change an user's password.
  *
- * @param username name of the user
- * @param hash produced by the user's password
- *
- * @return USER_DATABASE_OPERATION_OK
- *         <hr>
- *         USER_DATABASE_ALREADY_EXISTS
- */
-extern uint8_t user_database_create(
-        char *username,
-        uint32_t hash
-);
-
-/**
- * Attempts to delete an user.
- *
- * @param username name of the user
- * @param hash produced by the user's password
- *
- * @return USER_DATABASE_OPERATION_OK
- *         <hr>
- *         USER_DATABASE_INVALID_CREDENTIALS<br>
- *         USER_DATABASE_NOT_EXISTS
- */
-extern uint8_t user_database_delete(
-        char *username,
-        uint32_t hash
-);
-
-/**
- * Attempts to delete an user.
- *
- * @param username name of the user
+ * @param id id of the user
  * @param old_hash produced by the user's old password
  * @param new_hash produced by the user's new password
  *
@@ -126,10 +141,10 @@ extern uint8_t user_database_delete(
  *         USER_DATABASE_INVALID_CREDENTIALS<br>
  *         USER_DATABASE_NOT_EXISTS
  */
-extern uint8_t user_database_password(
-        char *username,
-        uint32_t old_hash,
-        uint32_t new_hash
+extern int8_t user_database_password(
+        size_t id,
+        uint64_t old_hash,
+        uint64_t new_hash
 );
 
 /**
