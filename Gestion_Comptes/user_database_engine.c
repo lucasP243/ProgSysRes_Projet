@@ -12,7 +12,7 @@ struct userinfo {
     uint8_t flags;
 };
 
-#define USERINFO_FLAG_ONLINE 0
+#define USERINFO_FLAG_ONLINE (1UL << 0)
 
 int8_t user_database_insert(struct userinfo *user);
 
@@ -114,7 +114,7 @@ int8_t user_database_close() {
         if (user == NULL) continue;
 
         // Set user offline
-        user->flags &= ~(1UL << USERINFO_FLAG_ONLINE);
+        user->flags &= ~USERINFO_FLAG_ONLINE;
 
         fwrite(user_database[i], sizeof(*user), 1, database_persistent);
 
@@ -162,11 +162,11 @@ int8_t user_database_login(size_t id, uint64_t hash) {
 
     struct userinfo *user = user_database[id];
 
-    if (((user->flags >> USERINFO_FLAG_ONLINE) & 1UL) == 1UL) {
+    if (user->flags & USERINFO_FLAG_ONLINE) {
         return USER_DATABASE_ALREADY_CONNECTED;
     }
 
-    user->flags |= (1UL << USERINFO_FLAG_ONLINE);
+    user->flags |= USERINFO_FLAG_ONLINE;
 
     return USER_DATABASE_OPERATION_OK;
 }
@@ -178,11 +178,11 @@ int8_t user_database_logout(size_t id, uint64_t hash) {
 
     struct userinfo *user = user_database[id];
 
-    if (((user->flags >> USERINFO_FLAG_ONLINE) & 1UL) == 0UL) {
+    if (!(user->flags & USERINFO_FLAG_ONLINE)) {
         return USER_DATABASE_NOT_CONNECTED;
     }
 
-    user->flags &= ~(1UL << USERINFO_FLAG_ONLINE);
+    user->flags &= ~(USERINFO_FLAG_ONLINE);
 
     return USER_DATABASE_OPERATION_OK;
 }
@@ -195,6 +195,17 @@ int8_t user_database_password(size_t id, uint64_t old_hash, uint64_t new_hash) {
     user_database[id]->hash = new_hash;
 
     return USER_DATABASE_OPERATION_OK;
+}
+
+char *user_database_list() {
+    char *list = "";
+    for (size_t i = 0; i < user_database_size; i++) {
+        struct userinfo *user = user_database[i];
+        if (user->flags & USERINFO_FLAG_ONLINE) {
+            if (i > 0) strcat(list, ";");
+            strcat(list, user->username);
+        }
+    }
 }
 
 int8_t user_database_insert(struct userinfo *user) {
@@ -236,5 +247,3 @@ size_t user_database_next_id() {
     }
     return 0;
 }
-
-// TODO add thread-safety

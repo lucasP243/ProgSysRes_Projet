@@ -73,7 +73,9 @@ extern int8_t user_database_close();
  *
  * @return USER_DATABASE_OPERATION_OK
  *         <hr>
- *         USER_DATABASE_ALREADY_EXISTS
+ *         USER_DATABASE_INSERT_FAILED<br>
+ *         USER_DATABASE_ALREADY_EXISTS<br>
+ *         USER_DATABASE_TOO_MANY_USERS
  */
 extern int8_t user_database_create(
         const char *username,
