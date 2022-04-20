@@ -1,5 +1,6 @@
 #ifdef WIN32
 
+#include <windows.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
@@ -34,18 +35,21 @@ typedef struct in_addr IN_ADDR;
 
 #define PORT 24030
 
-static volatile int keepalive = 1;
+SOCKET sock;
 
 #ifdef WIN32
-BOOL WINAPI stop(DWORD x) {
-    puts(x);
-    keepalive = 0;
-    Sleep(10000);
-    return TRUE;
+
+static BOOL WINAPI stop() {
+    closesocket(sock);
+    user_database_close();
+    WSACleanup();
+    exit(EXIT_SUCCESS);
 }
+
 #elif defined (linux)
-static void stop() {
-    keepalive = 0;
+static void stop(void) {
+    closesocket(sock);
+    user_database_close();
 }
 #endif
 
@@ -88,14 +92,16 @@ int main(void) {
 
     // Catch closing signals
 #ifdef WIN32
-    SetConsoleCtrlHandler(stop, TRUE);
+    if (SetConsoleCtrlHandler(stop, TRUE) == 0) {
+        sock_err("Windows CtrlHandler");
+    }
 #elif defined (linux)
     signal(SIGTERM, stop);
     signal(SIGINT, stop);
 #endif
 
     // Create socket structure
-    SOCKET sock = socket(AF_INET, SOCK_DGRAM, 0);
+    sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (sock == INVALID_SOCKET) {
         sock_err("Creating socket");
     }
@@ -107,7 +113,7 @@ int main(void) {
     sin.sin_port = htons(PORT);
 
     // Bind address to socket
-    if (bind(sock, (SOCKADDR * ) & sin, sizeof sin) == SOCKET_ERROR) {
+    if (bind(sock, (SOCKADDR *) &sin, sizeof sin) == SOCKET_ERROR) {
         sock_err("Binding socket");
     }
 
@@ -119,13 +125,14 @@ int main(void) {
     SOCKADDR_IN from = {0};
     int from_size = sizeof from;
 
-    while (keepalive) {
+#pragma ide diagnostic ignored "EndlessLoop"
+    while (1) {
         puts("Waiting for datagram...");
         bytes_read = recvfrom(
                 sock,
                 msg_buffer, sizeof msg_buffer - 1,
                 0,
-                (SOCKADDR * ) & from, &from_size
+                (SOCKADDR *) &from, &from_size
         );
         if (bytes_read < 0) {
             sock_err("Receiving data");
@@ -144,24 +151,13 @@ int main(void) {
                 sock,
                 msg_buffer, sizeof msg_buffer - 1,
                 0,
-                (SOCKADDR * ) & from, from_size
+                (SOCKADDR *) &from, from_size
         );
         if (bytes_write < 0) {
             sock_err("Sending data");
         }
         printf("Data sent to [%s]\n", addr_buffer);
     }
-
-    closesocket(sock);
-    user_database_close();
-
-#ifdef WIN32
-    // If on Windows system, unloads Winsock DLL
-    WSACleanup();
-#endif
-
-    puts("Done. Terminating...");
-    return EXIT_SUCCESS;
 }
 
 void run(char *buffer) {
@@ -215,21 +211,21 @@ void run(char *buffer) {
             case USER_DATABASE_OPERATION_OK:
                 sprintf(
                         buffer,
-                        "User #%d deleted.",
+                        "User #%s deleted.",
                         id
                 );
                 break;
             case USER_DATABASE_INVALID_CREDENTIALS:
                 sprintf(
                         buffer,
-                        "Invalid credentials for user #%d.",
+                        "Invalid credentials for user #%s.",
                         id
                 );
                 break;
             case USER_DATABASE_NOT_EXISTS:
                 sprintf(
                         buffer,
-                        "User #%d not found.",
+                        "User #%s not found.",
                         id
                 );
                 break;
@@ -244,17 +240,121 @@ void run(char *buffer) {
 
         // >> login id password
     else if (strcmpi(command, "login") == 0) {
-
+        const char *id = strtok(NULL, " ");
+        const char *password = strtok(NULL, " ");
+        int8_t res = user_database_login(
+                strtoull(id, NULL, 10),
+                strtoull(password, NULL, 10)
+        );
+        switch (res) {
+            case USER_DATABASE_OPERATION_OK:
+                sprintf(
+                        buffer,
+                        "User #%s logged in.",
+                        id
+                );
+                break;
+            case USER_DATABASE_INVALID_CREDENTIALS:
+                sprintf(
+                        buffer,
+                        "Invalid credentials for user #%s.",
+                        id
+                );
+                break;
+            case USER_DATABASE_ALREADY_CONNECTED:
+                sprintf(
+                        buffer,
+                        "User #%s is already connected.",
+                        id
+                );
+                break;
+            default:
+                sprintf(
+                        buffer,
+                        "Internal error."
+                );
+                break;
+        }
     }
 
         // >> logout id password
     else if (strcmpi(command, "logout") == 0) {
-
+        const char *id = strtok(NULL, " ");
+        const char *password = strtok(NULL, " ");
+        int8_t res = user_database_logout(
+                strtoull(id, NULL, 10),
+                strtoull(password, NULL, 10)
+        );
+        switch (res) {
+            case USER_DATABASE_OPERATION_OK:
+                sprintf(
+                        buffer,
+                        "User #%s logged in.",
+                        id
+                );
+                break;
+            case USER_DATABASE_INVALID_CREDENTIALS:
+                sprintf(
+                        buffer,
+                        "Invalid credentials for user #%s.",
+                        id
+                );
+                break;
+            case USER_DATABASE_NOT_CONNECTED:
+                sprintf(
+                        buffer,
+                        "User #%s is not connected.",
+                        id
+                );
+                break;
+            default:
+                sprintf(
+                        buffer,
+                        "Internal error."
+                );
+                break;
+        }
     }
 
         // >> password id old_password new_password
     else if (strcmpi(command, "password") == 0) {
-
+        const char *id = strtok(NULL, " ");
+        const char *old_pwd = strtok(NULL, " ");
+        const char *new_pwd = strtok(NULL, " ");
+        int8_t res = user_database_password(
+                strtoull(id, NULL, 10),
+                strtoull(old_pwd, NULL, 10),
+                strtoull(new_pwd, NULL, 10)
+        );
+        switch (res) {
+            case USER_DATABASE_OPERATION_OK:
+                sprintf(
+                        buffer,
+                        "Password changed for user #%s.",
+                        id
+                );
+                break;
+            case USER_DATABASE_INVALID_CREDENTIALS:
+                sprintf(
+                        buffer,
+                        "Invalid credentials for user #%s.",
+                        id
+                );
+                break;
+            case USER_DATABASE_NOT_EXISTS:
+                sprintf(
+                        buffer,
+                        "User #%s does not exist.",
+                        id
+                );
+                break;
+            default:
+                sprintf(
+                        buffer,
+                        "Internal error."
+                );
+                break;
+        }
     }
 
         // >> list

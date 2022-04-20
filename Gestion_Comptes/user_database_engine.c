@@ -83,11 +83,12 @@ int8_t user_database_init() {
     }
 
     struct userinfo *user = NULL;
-    while (!feof(database_read)) {
-        fread(user, sizeof *user, 1, database_read);
+    size_t n;
+    do {
+        n = fread(user, sizeof *user, 1, database_read);
         user_database_insert(user);
         fwrite(user, sizeof *user, 1, database_write);
-    }
+    } while (n > 0);
 
     fclose(database_read);
     fclose(database_write);
