@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 #include "user_database_engine.h"
 
 const size_t DEFAULT_SIZE = 10000;
@@ -36,7 +37,7 @@ int8_t user_database_init() {
         return USER_DATABASE_INIT_FAILED;
     }
 
-    FILE *database_read, *database_write;
+    FILE *database_read = NULL, *database_write = NULL;
 
     /*
      * If the persistent database file doesn't exist, read from the backup and
@@ -83,12 +84,10 @@ int8_t user_database_init() {
     }
 
     struct userinfo *user = NULL;
-    size_t n;
-    do {
-        n = fread(user, sizeof *user, 1, database_read);
+    while (fread(user, sizeof *user, 1, database_read) > 0) {
         user_database_insert(user);
         fwrite(user, sizeof *user, 1, database_write);
-    } while (n > 0);
+    };
 
     fclose(database_read);
     fclose(database_write);
@@ -207,6 +206,7 @@ char *user_database_list() {
             strcat(list, user->username);
         }
     }
+    return list;
 }
 
 int8_t user_database_insert(struct userinfo *user) {

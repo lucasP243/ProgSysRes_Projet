@@ -6,12 +6,10 @@
 
 #elif defined(linux)
 
-#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-#include <netdb.h>
 #include <errno.h>
 #define INVALID_SOCKET -1
 #define SOCKET_ERROR -1
@@ -19,7 +17,6 @@
 typedef int SOCKET;
 typedef struct sockaddr_in SOCKADDR_IN;
 typedef struct sockaddr SOCKADDR;
-typedef struct in_addr IN_ADDR;
 
 #else
 
@@ -47,9 +44,10 @@ static BOOL WINAPI stop() {
 }
 
 #elif defined (linux)
-static void stop(void) {
+static void stop(int sig) {
     closesocket(sock);
     user_database_close();
+    exit(EXIT_SUCCESS);
 }
 #endif
 
@@ -96,8 +94,8 @@ int main(void) {
         sock_err("Windows CtrlHandler");
     }
 #elif defined (linux)
-    signal(SIGTERM, stop);
-    signal(SIGINT, stop);
+    signal(SIGTERM, &stop);
+    signal(SIGINT, &stop);
 #endif
 
     // Create socket structure
@@ -117,13 +115,13 @@ int main(void) {
         sock_err("Binding socket");
     }
 
-    int bytes_read, bytes_write;
+    size_t bytes_read, bytes_write;
     char msg_buffer[1024];
 
     char addr_buffer[INET_ADDRSTRLEN];
 
     SOCKADDR_IN from = {0};
-    int from_size = sizeof from;
+    socklen_t from_size = sizeof from;
 
 #pragma ide diagnostic ignored "EndlessLoop"
     while (1) {
@@ -164,7 +162,7 @@ void run(char *buffer) {
     char *command = strtok(buffer, " ");
 
     // >> create username password
-    if (strcmpi(command, "create") == 0) {
+    if (strcasecmp(command, "create") == 0) {
         const char *username = strtok(NULL, " ");
         const char *password = strtok(NULL, " ");
         size_t id;
@@ -177,14 +175,14 @@ void run(char *buffer) {
             case USER_DATABASE_OPERATION_OK:
                 sprintf(
                         buffer,
-                        "User %s#%d created.",
+                        "User %s#%ld created.",
                         username, id
                 );
                 break;
             case USER_DATABASE_ALREADY_EXISTS:
                 sprintf(
                         buffer,
-                        "User %s#%d already exists.",
+                        "User %s#%ld already exists.",
                         username, id
                 );
                 break;
@@ -200,7 +198,7 @@ void run(char *buffer) {
     }
 
         // >> delete id password
-    else if (strcmpi(command, "delete") == 0) {
+    else if (strcasecmp(command, "delete") == 0) {
         const char *id = strtok(NULL, " ");
         const char *password = strtok(NULL, " ");
         int8_t res = user_database_delete(
@@ -239,7 +237,7 @@ void run(char *buffer) {
     }
 
         // >> login id password
-    else if (strcmpi(command, "login") == 0) {
+    else if (strcasecmp(command, "login") == 0) {
         const char *id = strtok(NULL, " ");
         const char *password = strtok(NULL, " ");
         int8_t res = user_database_login(
@@ -278,7 +276,7 @@ void run(char *buffer) {
     }
 
         // >> logout id password
-    else if (strcmpi(command, "logout") == 0) {
+    else if (strcasecmp(command, "logout") == 0) {
         const char *id = strtok(NULL, " ");
         const char *password = strtok(NULL, " ");
         int8_t res = user_database_logout(
@@ -317,7 +315,7 @@ void run(char *buffer) {
     }
 
         // >> password id old_password new_password
-    else if (strcmpi(command, "password") == 0) {
+    else if (strcasecmp(command, "password") == 0) {
         const char *id = strtok(NULL, " ");
         const char *old_pwd = strtok(NULL, " ");
         const char *new_pwd = strtok(NULL, " ");
@@ -358,10 +356,10 @@ void run(char *buffer) {
     }
 
         // >> list
-    else if (strcmpi(command, "list") == 0) {
+    else if (strcasecmp(command, "list") == 0) {
         sprintf(
                 buffer,
-                user_database_list()
+                "%s", user_database_list()
         );
     }
 
