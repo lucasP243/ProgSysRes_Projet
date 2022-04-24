@@ -1,3 +1,13 @@
+#ifdef WIN32
+
+#include <winsock.h>
+
+#elif defined(linux)
+
+#else
+#error platform unsupported
+#endif
+
 #include <stdio.h>
 #include <pthread.h>
 #include "user_database_handler.h"
@@ -8,7 +18,7 @@ int main() {
 #ifdef WIN32
     WSADATA wsa;
     int err = WSAStartup(MAKEWORD(2, 2), &wsa);
-    if (err == 0) {
+    if (err != 0) {
         puts("WSAStartup failed.");
         exit(EXIT_FAILURE);
     }

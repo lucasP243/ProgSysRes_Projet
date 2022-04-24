@@ -67,7 +67,8 @@ _Noreturn void *server_handler(void *arg) {
     }
 
     while (1) {
-        struct client_t *client = calloc(1, sizeof *client);
+        struct client_t *client = malloc( sizeof *client);
+        client->addr_len = sizeof client->addr;
 
         client->socket = accept(
                 server_socket,
@@ -92,7 +93,7 @@ void *client_handler(void *arg) {
 
     struct client_t *client = (struct client_t *) arg;
 
-    printf("Accepted connection for client #%d", client->socket);
+    printf("Accepted connection for client #%d\n", client->socket);
 
     char buffer[1024];
 
@@ -105,6 +106,7 @@ void *client_handler(void *arg) {
             &client->addr_len
     )) > 0) {
         buffer[n] = '\0';
+        printf("Request submitted by client #%d : %s\n", client->socket, buffer);
 
         user_database_request(buffer);
 
@@ -120,7 +122,7 @@ void *client_handler(void *arg) {
     }
 
 
-    printf("Client #%d disconnected", client->socket);
+    printf("Client #%d disconnected\n", client->socket);
     free(client);
     pthread_exit(EXIT_SUCCESS);
 }
