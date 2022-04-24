@@ -6,15 +6,12 @@
 
 #elif defined(linux)
 
-#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <arpa/inet.h>
 #include <unistd.h>
 #include <netdb.h>
 #include <errno.h>
-#define INVALID_SOCKET -1
-#define SOCKET_ERROR -1
+#define INVALID_SOCKET (-1)
 #define closesocket(s) close(s)
 typedef int SOCKET;
 typedef struct sockaddr_in SOCKADDR_IN;
@@ -28,6 +25,8 @@ typedef struct in_addr IN_ADDR;
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "user_database_handler.h"
 
 #define DATABASE_ADDR "localhost"
@@ -47,20 +46,10 @@ static SOCKADDR_IN to = {0};
 
 void user_database_open() {
 
-#ifdef WIN32
-    WSADATA wsa;
-    int err = WSAStartup(MAKEWORD(2, 2), &wsa);
-    if (err == 0) {
-        puts("WSAStartup failed.");
-        exit(EXIT_FAILURE);
-    }
-#endif
-
     database_socket = socket(AF_INET, SOCK_DGRAM, 0);
     if (database_socket == INVALID_SOCKET) {
         sock_err("Creating socket");
     }
-
 
     struct hostent *hostinfo = gethostbyname(DATABASE_ADDR);
     if (hostinfo == NULL) {
@@ -76,18 +65,11 @@ void user_database_open() {
 void user_database_close() {
     closesocket(database_socket);
     to = (SOCKADDR_IN) {0};
-
-#ifdef WIN32
-    if (WSACleanup() != 0) {
-        puts("WSACleanup failed");
-        exit(EXIT_FAILURE);
-    }
-#endif
 }
 
 int user_database_request(char* buffer) {
 
-    int n = sendto(
+    size_t n = sendto(
             database_socket,
             buffer, (int) strlen(buffer),
             0,
@@ -110,7 +92,7 @@ int user_database_request(char* buffer) {
 
     buffer[n] = '\0';
 
-    return n;
+    return (int) n;
 }
 
 /* -------------------------------------------------------------------------- */
