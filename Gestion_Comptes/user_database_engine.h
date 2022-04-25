@@ -152,8 +152,10 @@ extern int8_t user_database_password(
 /**
  * Gets the list of online users.
  *
- * @return The usernames of online users, CSV-style
+ * @param buffer The usernames of online users, CSV-style
+ *
+ * @return USER_DATABASE_OPERATION_OK
  */
-extern char* user_database_list();
+extern int8_t user_database_list(char *buffer);
 
 #endif

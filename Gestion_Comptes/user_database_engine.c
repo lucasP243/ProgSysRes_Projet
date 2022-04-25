@@ -135,11 +135,12 @@ int8_t user_database_create(const char *username, uint64_t hash, size_t *id) {
     if (*id == 0) return USER_DATABASE_TOO_MANY_USERS;
 
     struct userinfo user = {
-            .username = *username,
+            .username = "",
             .hash = hash,
             .id = *id,
             .flags = 0
     };
+    strcpy(user.username, username);
 
     return user_database_insert(&user);
 }
@@ -197,16 +198,17 @@ int8_t user_database_password(size_t id, uint64_t old_hash, uint64_t new_hash) {
     return USER_DATABASE_OPERATION_OK;
 }
 
-char *user_database_list() {
-    char *list = "";
+int8_t user_database_list(char *buffer) {
+    strcpy(buffer, "");
     for (size_t i = 0; i < user_database_size; i++) {
         struct userinfo *user = user_database[i];
+        if (user == NULL) continue;
         if (user->flags & USERINFO_FLAG_ONLINE) {
-            if (i > 0) strcat(list, ";");
-            strcat(list, user->username);
+            if (strlen(buffer) > 0) strcat(buffer, ";");
+            strcat(buffer, user->username);
         }
     }
-    return list;
+    return USER_DATABASE_OPERATION_OK;
 }
 
 int8_t user_database_insert(struct userinfo *user) {
@@ -226,7 +228,8 @@ int8_t user_database_insert(struct userinfo *user) {
     // Set user offline
     user->flags &= ~(1UL << USERINFO_FLAG_ONLINE);
 
-    user_database[user->id] = user;
+    user_database[user->id] = malloc(sizeof(struct userinfo));
+    memcpy(user_database[user->id], user, sizeof(struct userinfo));
 
     return USER_DATABASE_OPERATION_OK;
 }

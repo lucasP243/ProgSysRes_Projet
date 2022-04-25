@@ -2,7 +2,6 @@
 
 #include <winsock2.h>
 #include <windows.h>
-#include <ws2tcpip.h>
 
 #elif defined(linux)
 
@@ -78,11 +77,14 @@ int main(void) {
     }
 
     char buffer[1024];
-    int n = 0;
+    int n;
 
     while (1) {
         printf(">> ");
         gets(buffer);
+        if (strcmp(buffer, "") == 0) {
+            continue;
+        }
 
         char *cmd = strtok(buffer, TOKEN_DELIMITER);
         if (strcmp(cmd, "help") == 0) {
@@ -92,7 +94,8 @@ int main(void) {
                     "delete <id> <password> : delete your account\n"
                     "login <id> <password> : log in to the server\n"
                     "logout <id> <password> : log out of the server\n"
-                    "passwd <id> <old password> <new password> : change your password"
+                    "password <id> <old password> <new password> : change your password\n"
+                    "list : displays a list of connected users"
             );
             continue;
 
@@ -116,11 +119,16 @@ int main(void) {
             const char *password = strtok(NULL, TOKEN_DELIMITER);
             sprintf(buffer, "logout %s %lu", id, hash(password));
 
-        } else if (strcmp(cmd, "passwd") == 0) {
+        } else if (strcmp(cmd, "password") == 0) {
             const char *id = strtok(NULL, TOKEN_DELIMITER);
             const char *old_pass = strtok(NULL, TOKEN_DELIMITER);
             const char *new_pass = strtok(NULL, TOKEN_DELIMITER);
-            sprintf(buffer, "password %s %lu %lu", id, hash(old_pass), hash(new_pass));
+            strcpy(buffer, "");
+            sprintf(buffer, "password %s %lu %lu", id, hash(old_pass),
+                    hash(new_pass));
+
+        } else if (strcmp(cmd, "list") == 0) {
+            sprintf(buffer, "list");
 
         } else if (strcmp(cmd, "exit") == 0) {
             return close();

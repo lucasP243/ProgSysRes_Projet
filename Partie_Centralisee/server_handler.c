@@ -106,13 +106,14 @@ void *client_handler(void *arg) {
             &client->addr_len
     )) > 0) {
         buffer[n] = '\0';
-        printf("Request submitted by client #%d : %s\n", client->socket, buffer);
 
+        printf("Request submitted by client #%d : %s\n", client->socket, buffer);
         user_database_request(buffer);
+        printf("Database response : %s\n", buffer);
 
         if (sendto(
                 client->socket,
-                buffer, (size_t) strlen(buffer),
+                buffer, (signed) strlen(buffer),
                 0,
                 (SOCKADDR *) &client->addr,
                 client->addr_len

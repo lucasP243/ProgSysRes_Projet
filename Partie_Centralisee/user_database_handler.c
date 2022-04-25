@@ -67,7 +67,10 @@ void user_database_close() {
     to = (SOCKADDR_IN) {0};
 }
 
-int user_database_request(char* buffer) {
+int user_database_request(char* request) {
+
+    char buffer[1024];
+    strcpy(buffer, request);
 
     size_t n = sendto(
             database_socket,
@@ -82,7 +85,7 @@ int user_database_request(char* buffer) {
 
     n = recvfrom(
             database_socket,
-            buffer, (int) strlen(buffer) - 1,
+            buffer, sizeof buffer - 1,
             0,
             NULL, NULL
     );
@@ -91,6 +94,7 @@ int user_database_request(char* buffer) {
     }
 
     buffer[n] = '\0';
+    strcpy(request, buffer);
 
     return (int) n;
 }

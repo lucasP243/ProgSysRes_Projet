@@ -147,7 +147,7 @@ int main(void) {
 
         bytes_write = sendto(
                 sock,
-                msg_buffer, sizeof msg_buffer - 1,
+                msg_buffer, (signed) strlen(msg_buffer),
                 0,
                 (SOCKADDR *) &from, from_size
         );
@@ -171,6 +171,7 @@ void run(char *buffer) {
                 strtoull(password, NULL, 10),
                 &id
         );
+        *buffer = '\0';
         switch (res) {
             case USER_DATABASE_OPERATION_OK:
                 sprintf(
@@ -205,6 +206,7 @@ void run(char *buffer) {
                 strtoull(id, NULL, 10),
                 strtoull(password, NULL, 10)
         );
+        *buffer = '\0';
         switch (res) {
             case USER_DATABASE_OPERATION_OK:
                 sprintf(
@@ -216,8 +218,7 @@ void run(char *buffer) {
             case USER_DATABASE_INVALID_CREDENTIALS:
                 sprintf(
                         buffer,
-                        "Invalid credentials for user #%s.",
-                        id
+                        "Invalid credentials"
                 );
                 break;
             case USER_DATABASE_NOT_EXISTS:
@@ -244,6 +245,7 @@ void run(char *buffer) {
                 strtoull(id, NULL, 10),
                 strtoull(password, NULL, 10)
         );
+        *buffer = '\0';
         switch (res) {
             case USER_DATABASE_OPERATION_OK:
                 sprintf(
@@ -255,14 +257,20 @@ void run(char *buffer) {
             case USER_DATABASE_INVALID_CREDENTIALS:
                 sprintf(
                         buffer,
-                        "Invalid credentials for user #%s.",
-                        id
+                        "Invalid credentials."
                 );
                 break;
             case USER_DATABASE_ALREADY_CONNECTED:
                 sprintf(
                         buffer,
                         "User #%s is already connected.",
+                        id
+                );
+                break;
+            case USER_DATABASE_NOT_EXISTS:
+                sprintf(
+                        buffer,
+                        "User #%s not found.",
                         id
                 );
                 break;
@@ -283,25 +291,32 @@ void run(char *buffer) {
                 strtoull(id, NULL, 10),
                 strtoull(password, NULL, 10)
         );
+        *buffer = '\0';
         switch (res) {
             case USER_DATABASE_OPERATION_OK:
                 sprintf(
                         buffer,
-                        "User #%s logged in.",
+                        "User #%s logged out.",
                         id
                 );
                 break;
             case USER_DATABASE_INVALID_CREDENTIALS:
                 sprintf(
                         buffer,
-                        "Invalid credentials for user #%s.",
-                        id
+                        "Invalid credentials"
                 );
                 break;
             case USER_DATABASE_NOT_CONNECTED:
                 sprintf(
                         buffer,
                         "User #%s is not connected.",
+                        id
+                );
+                break;
+            case USER_DATABASE_NOT_EXISTS:
+                sprintf(
+                        buffer,
+                        "User #%s not found.",
                         id
                 );
                 break;
@@ -324,6 +339,7 @@ void run(char *buffer) {
                 strtoull(old_pwd, NULL, 10),
                 strtoull(new_pwd, NULL, 10)
         );
+        *buffer = '\0';
         switch (res) {
             case USER_DATABASE_OPERATION_OK:
                 sprintf(
@@ -335,14 +351,13 @@ void run(char *buffer) {
             case USER_DATABASE_INVALID_CREDENTIALS:
                 sprintf(
                         buffer,
-                        "Invalid credentials for user #%s.",
-                        id
+                        "Invalid credentials"
                 );
                 break;
             case USER_DATABASE_NOT_EXISTS:
                 sprintf(
                         buffer,
-                        "User #%s does not exist.",
+                        "User #%s not found.",
                         id
                 );
                 break;
@@ -357,10 +372,9 @@ void run(char *buffer) {
 
         // >> list
     else if (strcasecmp(command, "list") == 0) {
-        sprintf(
-                buffer,
-                "%s", user_database_list()
-        );
+        *buffer = '\0';
+        user_database_list(buffer);
+        if (strlen(buffer) == 0) strcpy(buffer, "No user connected.");
     }
 
         // >> Unknown command
