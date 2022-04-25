@@ -7,7 +7,9 @@
 
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netdb.h>
 #include <errno.h>
+#include <unistd.h>
 
 #define INVALID_SOCKET (-1)
 #define SOCKET_ERROR (-1)
@@ -36,7 +38,7 @@ SOCKET client_socket = {0};
 
 unsigned long hash(const char *str);
 
-int close();
+int client_close();
 
 void sock_err(char *action);
 
@@ -57,7 +59,7 @@ int main(void) {
 
     struct hostent *host_info = gethostbyname(SERVER_ADDR);
     if (host_info == NULL) {
-        fprintf(stderr, "Unknown host %d\n", SERVER_ADDR);
+        fprintf(stderr, "Unknown host %s\n", SERVER_ADDR);
         return EXIT_FAILURE;
     }
 
@@ -81,7 +83,8 @@ int main(void) {
 
     while (1) {
         printf(">> ");
-        gets(buffer);
+        fgets(buffer, 10000, stdin);
+        buffer[strlen(buffer) - 1] = 0; // Remove trailing newline
         if (strcmp(buffer, "") == 0) {
             continue;
         }
@@ -131,7 +134,7 @@ int main(void) {
             sprintf(buffer, "list");
 
         } else if (strcmp(cmd, "exit") == 0) {
-            return close();
+            return client_close();
 
         } else {
             puts("Unknown command");
@@ -150,7 +153,7 @@ int main(void) {
     }
 }
 
-int close() {
+int client_close() {
     closesocket(client_socket);
 
 #ifdef WIN32
